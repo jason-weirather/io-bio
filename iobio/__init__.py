@@ -2,6 +2,7 @@ from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from scipy.stats import zscore
 #from collections import namedtuple
 #OrderedCluster = namedtuple('OrderedCluster',['ids','colors'])
 def cluster_ordered_agglomerative (dataframe,
@@ -12,7 +13,9 @@ def cluster_ordered_agglomerative (dataframe,
 	                               compute_full_tree='auto',
 	                               linkage='ward',
 	                               rankstat='median',
-	                               cmapcolors='Blues'):
+	                               cmapcolors='Blues',
+                                       z_score=False):
+    if z_score: dataframe = dataframe.copy().apply(zscore)
     clusters = AgglomerativeClustering(n_clusters=n_clusters,
     	                               affinity=affinity,
     	                               memory=memory,
