@@ -22,5 +22,5 @@ setup(
     'License :: OSI Approved :: Apache Software License'
   ],
   keywords='bioinformatics',
-  packages=['iobio']
+  packages=['iobio','iobio.qnorm','iobio.entropy','iobio.explicitsemanticanalysis']
 )
