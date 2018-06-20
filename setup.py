@@ -22,5 +22,10 @@ setup(
     'License :: OSI Approved :: Apache Software License'
   ],
   keywords='bioinformatics',
-  packages=['iobio','iobio.qnorm','iobio.entropy','iobio.explicitsemanticanalysis']
+  install_requires=['matplotlib','seaborn','pandas'],
+  packages=['iobio',
+            'iobio.qnorm',
+            'iobio.entropy',
+            'iobio.explicitsemanticanalysis',
+            'iobio.stackedheatmap']
 )
