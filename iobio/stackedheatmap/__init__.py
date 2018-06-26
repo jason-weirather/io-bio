@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import linkage, leaves_list
+import pandas as pd
 
 class GenericElement:
     def __init__(self):
@@ -44,11 +45,35 @@ class ContinuousMatrix(GenericElement):
 class StackedHeatmap(GenericElement):
     def __init__(self):
         super()
-        self.columns = [] # our column order
+        self._columns = [] # our column order
         self._levels = [] # from top to bottom how the levels are stacked
         self._column_widths = [] # heatmap will be on left and the scales will be on the right
         self._level_heights = [] # default to the
         return
+    def set_columns(self,columns):
+        self._columns = columns
+    @property
+    def levels(self): return self._levels
+    @property
+    def columns(self):
+        if len(self._columns)!=0: return list(self._columns)
+        cols = set()
+        for x in self._levels:
+            cols.add(set(self._levels.columns))
+        for x in self._levels:
+            cols = cols&set(self._levels.columns)
+        return sorted(list(cols))
+    def cluster_columns(self,method='ward',levels=None):
+        cols = self.columns
+        if levels is None: levels = self._levels
+        arr = []
+        for l in self.levels:
+            arr.append(l.data[cols])
+        #print(arr)
+        arr = pd.concat(arr)
+        v = leaves_list(linkage(arr.T,method=method,optimal_ordering=True))
+        ordered = arr.columns[v]
+        self._columns = list(ordered) 
     def add_level(self,level):
         self._levels.append(level)
     def predict_height_ratios(self):
