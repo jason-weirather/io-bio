@@ -2,6 +2,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.cluster.hierarchy import linkage, leaves_list
 import pandas as pd
+from collections import OrderedDict
+from matplotlib import colors
+from matplotlib.patches import Patch
+
 
 class GenericElement:
     def __init__(self):
@@ -14,13 +18,20 @@ class GenericElement:
         return self._data
 
 class DiscreteMatrix(GenericElement):
-    def __init__(self,data,title=''):
+    def __init__(self,data,title='',trans=None):
         super()
         self._data = data
+        self._cmap = None
+        tkeys = trans.keys()
+        if trans is not None:
+            trans2 = OrderedDict([(x,{'num':i,'color':trans[x]}) for i,x in enumerate(tkeys)])
+            self._data = self._data.applymap(lambda x: trans2[x]['num'])
+            self.cmap = colors.ListedColormap([trans2[x]['color'] for x in trans2.keys()])
         self.title = title
         self.type = 'DiscreteMatrix'
 
 class ContinuousMatrix(GenericElement):
+    # Add a continuous expression component
     def __init__(self,data,title='',row_standard=False,row_mean=False,center=0,cmap='RdBu_r',row_cluster=None):
         super()
         self._data = data
@@ -89,16 +100,17 @@ class StackedHeatmap(GenericElement):
         #Draw each of the subplots
         for i,level in enumerate(self._levels):
             if level.type == 'ContinuousMatrix': self._draw_continuous_heatmap(i,level,ax)
+            if level.type == 'DiscreteMatrix': self._draw_discrete_colormap(i,level,ax)
         # Finish the plot
         return fig, ax
 
     def _draw_continuous_heatmap(self,i,level,ax):
-        if len(self._levels) > 1:
-            axi = ax[i][0] # the heatmap
-            axj = ax[i][1] # the legend
-        else:
-            axi = ax[0] # the heatmap
-            axj = ax[1] # the legend
+        #if len(self._levels) > 1:
+        axi = ax[i][0] # the heatmap
+        axj = ax[i][1] # the legend
+        #else:
+        #    axi = ax[0] # the heatmap
+        #    axj = ax[1] # the legend
         sns.heatmap(level.data.loc[:,self.columns],cbar_ax=axj,ax=axi,cmap=level._cmap,center=level._center)
         if i < len(self._levels)-1:
             axi.get_xaxis().set_visible(False)
@@ -107,5 +119,11 @@ class StackedHeatmap(GenericElement):
         axi.set_yticks([x+0.5 for x in range(0,len(labs))])
         axi.set_yticklabels(labs)
         for t in axi.get_yticklabels(): t.set_rotation(0)
-
+    def _draw_discrete_colormap(self,i,level,ax):
+        #if len(self._levels)
+        axi = ax[i][0]
+        axj = ax[i][1]
+        axi.matshow(level.data[self.columns],cmap=level.cmap)
+        axi.axis('off')
+        legend_elements = []
 
