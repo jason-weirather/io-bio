@@ -27,21 +27,24 @@ class DiscreteMatrix(GenericElement):
             trans2 = OrderedDict([(x,{'num':i,'color':trans[x]}) for i,x in enumerate(tkeys)])
             self._data = self._data.applymap(lambda x: trans2[x]['num'])
             self.cmap = colors.ListedColormap([trans2[x]['color'] for x in trans2.keys()])
+        else:
+            raise ValueError("You need to provide a translation to colors")
         self.title = title
         self.type = 'DiscreteMatrix'
+        self.legend_elements = [OrderedDict({'color':trans2[x]['color'],'label':x}) for x in trans2.keys()]
 
 class ContinuousMatrix(GenericElement):
     # Add a continuous expression component
-    def __init__(self,data,title='',row_standard=False,row_mean=False,center=0,cmap='RdBu_r',row_cluster=None):
+    def __init__(self,data,title='',row_range_normalize=False,row_mean_normalize=False,center=0,cmap='RdBu_r',row_cluster=None,legend=True,ticks='default'):
         super()
         self._data = data
         self._center = center
         self._cmap = cmap
-        if row_standard:
+        if row_range_normalize:
             d = self._data.T
             nd = (d-d.min())/(d.max()-d.min())
             self._data = nd.T
-        if row_mean:
+        if row_mean_normalize:
             d = self._data.T
             nd = (d-d.mean())/d.std()
             self._data = nd.T
@@ -52,6 +55,8 @@ class ContinuousMatrix(GenericElement):
             self._data = self._data.loc[self._data.index[v]]
         self.title = title
         self.type = 'ContinuousMatrix'
+        self.do_legend = legend
+        self.ticks = ticks
 
 class StackedHeatmap(GenericElement):
     def __init__(self):
@@ -89,9 +94,9 @@ class StackedHeatmap(GenericElement):
         self._levels.append(level)
     def predict_height_ratios(self):
         return [x.row_count for x in self._levels]
-    def draw(self,figure_size=(10,10),width_ratios=(10,1),height_ratios=None):
+    def draw(self,figure_size=(10,10),width_ratios=(10,1,2),height_ratios=None):
         height_ratios = self.predict_height_ratios() if height_ratios is None else height_ratios
-        fig, ax = plt.subplots(len(self._levels),2,
+        fig, ax = plt.subplots(len(self._levels),3,
                                figsize=figure_size,
                                gridspec_kw={
                                    'height_ratios': height_ratios,
@@ -108,10 +113,14 @@ class StackedHeatmap(GenericElement):
         #if len(self._levels) > 1:
         axi = ax[i][0] # the heatmap
         axj = ax[i][1] # the legend
+        ax[i][2].axis('off')
         #else:
         #    axi = ax[0] # the heatmap
         #    axj = ax[1] # the legend
-        sns.heatmap(level.data.loc[:,self.columns],cbar_ax=axj,ax=axi,cmap=level._cmap,center=level._center)
+        sns.heatmap(level.data.loc[:,self.columns],cbar_ax=axj, ax=axi, cmap=level._cmap, center=level._center)
+        if not level.do_legend: 
+            axj.axis('off')
+            axj.set_visible(False)
         if i < len(self._levels)-1:
             axi.get_xaxis().set_visible(False)
         labs = list(level.data.index)
@@ -119,11 +128,26 @@ class StackedHeatmap(GenericElement):
         axi.set_yticks([x+0.5 for x in range(0,len(labs))])
         axi.set_yticklabels(labs)
         for t in axi.get_yticklabels(): t.set_rotation(0)
+        axi.set_ylabel(level.title)
+        #if level.ticks == 'minimal':
+        #    continue
+
     def _draw_discrete_colormap(self,i,level,ax):
         #if len(self._levels)
         axi = ax[i][0]
-        axj = ax[i][1]
+        ax[i][1].axis('off')
+        axj = ax[i][2]
         axi.matshow(level.data[self.columns],cmap=level.cmap)
-        axi.axis('off')
-        legend_elements = []
+        #axi.axis('off')
+        legend_elements = [Patch(facecolor=x['color'],edgecolor='black',label=x['label']) for x in level.legend_elements]
+        axj.legend(handles=legend_elements,loc='center')
+        axj.axis('off')
+        axi.set_yticklabels(list(level.data.index))
+        axi.set_yticks(range(0,len(level.data.index)))
+        axi.xaxis.set_ticks([])
+        axi.spines['top'].set_visible(False)
+        axi.spines['bottom'].set_visible(False)
+        axi.spines['left'].set_visible(False)
+        axi.spines['right'].set_visible(False)
+        axi.set_ylabel(level.title)
 
