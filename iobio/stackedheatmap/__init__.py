@@ -18,10 +18,11 @@ class GenericElement:
         return self._data
 
 class DiscreteMatrix(GenericElement):
-    def __init__(self,data,title='',trans=None):
+    def __init__(self,data,title='',trans=None,aspect_ratio=None):
         super()
         self._data = data
         self._cmap = None
+        self.aspect_ratio = aspect_ratio
         tkeys = trans.keys()
         if trans is not None:
             trans2 = OrderedDict([(x,{'num':i,'color':trans[x]}) for i,x in enumerate(tkeys)])
@@ -32,6 +33,7 @@ class DiscreteMatrix(GenericElement):
         self.title = title
         self.type = 'DiscreteMatrix'
         self.legend_elements = [OrderedDict({'color':trans2[x]['color'],'label':x}) for x in trans2.keys()]
+
 
 class ContinuousMatrix(GenericElement):
     # Add a continuous expression component
@@ -145,6 +147,7 @@ class StackedHeatmap(GenericElement):
         axi.set_yticklabels(list(level.data.index))
         axi.set_yticks(range(0,len(level.data.index)))
         axi.xaxis.set_ticks([])
+        if level.aspect_ratio is not None: axi.set_aspect(level.aspect_ratio)
         axi.spines['top'].set_visible(False)
         axi.spines['bottom'].set_visible(False)
         axi.spines['left'].set_visible(False)
