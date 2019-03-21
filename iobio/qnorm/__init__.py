@@ -6,7 +6,7 @@ class QNorm:
     def fit(self,df):
         return _QNormFit(self,df.stack().groupby(df.rank(method='first').stack().astype(int)).mean())
     def fit_transform(self,df):
-        return fit(df).transform(df)
+        return self.fit(df).transform(df)
 class _QNormFit:
     def __init__(self,parent,df):
         self.qnorm = parent

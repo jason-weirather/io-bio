@@ -99,6 +99,7 @@ class StackedHeatmap(GenericElement):
     def draw(self,figure_size=(10,10),width_ratios=(10,1,2),height_ratios=None):
         height_ratios = self.predict_height_ratios() if height_ratios is None else height_ratios
         fig, ax = plt.subplots(len(self._levels),3,
+                               squeeze=False,
                                figsize=figure_size,
                                gridspec_kw={
                                    'height_ratios': height_ratios,
@@ -119,7 +120,10 @@ class StackedHeatmap(GenericElement):
         #else:
         #    axi = ax[0] # the heatmap
         #    axj = ax[1] # the legend
-        sns.heatmap(level.data.loc[:,self.columns],cbar_ax=axj, ax=axi, cmap=level._cmap, center=level._center)
+        df = level.data.loc[:,self.columns]
+        mask = df.isnull()
+        g = sns.heatmap(df,mask=mask,cbar_ax=axj, ax=axi, cmap=level._cmap, center=level._center)
+        g.set_facecolor('black')
         if not level.do_legend: 
             axj.axis('off')
             axj.set_visible(False)
@@ -139,7 +143,10 @@ class StackedHeatmap(GenericElement):
         axi = ax[i][0]
         ax[i][1].axis('off')
         axj = ax[i][2]
+        #print(self.columns)
+        #print(level.data.shape)
         axi.matshow(level.data[self.columns],cmap=level.cmap)
+        axi.grid(False)
         #axi.axis('off')
         legend_elements = [Patch(facecolor=x['color'],edgecolor='black',label=x['label']) for x in level.legend_elements]
         axj.legend(handles=legend_elements,loc='center')
